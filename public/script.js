@@ -10,7 +10,9 @@ const msgInput = document.getElementById('msg-input');
 let currentRoom = '';
 let myName = '';
 
-joinBtn.addEventListener('click', () => {
+joinBtn.addEventListener('click', (e) => {
+    e.preventDefault(); // Page refresh hone se rokne ke liye
+    
     myName = document.getElementById('username').value.trim();
     currentRoom = document.getElementById('room').value.trim();
     const passkey = document.getElementById('passkey').value.trim();
@@ -33,9 +35,16 @@ socket.on('errorMsg', (msg) => {
     alert(msg);
 });
 
-sendBtn.addEventListener('click', sendMessage);
+sendBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    sendMessage();
+});
+
 msgInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
 });
 
 function sendMessage() {
