@@ -1,83 +1,55 @@
 const socket = io();
 
-const authScreen = document.getElementById('auth-screen');
+const joinScreen = document.getElementById('join-screen');
 const chatScreen = document.getElementById('chat-screen');
-const loginForm = document.getElementById('login-form');
-const chatForm = document.getElementById('chat-form');
-const errorMsg = document.getElementById('error-msg');
-const messagesContainer = document.getElementById('messages-container');
-const currentRoomTitle = document.getElementById('current-room-title');
+const joinBtn = document.getElementById('join-btn');
+const sendBtn = document.getElementById('send-btn');
 const leaveBtn = document.getElementById('leave-btn');
 
-let currentUser = "";
+let currentRoom = '';
+let myName = '';
+let secretKey = '';
 
-// Authentication & Join Room
-loginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const username = document.getElementById('username').value.trim();
-    const roomName = document.getElementById('room-name').value.trim();
-    const roomKey = document.getElementById('room-key').value.trim();
+joinBtn.addEventListener('click', () => {
+    myName = document.getElementById('username').value.trim();
+    currentRoom = document.getElementById('room').value.trim();
+    secretKey = document.getElementById('passkey').value.trim();
 
-    currentUser = username;
-
-    socket.emit('join-room', { roomName, username, roomKey }, (response) => {
-        if (response.success) {
-            authScreen.classList.add('hidden');
-            chatScreen.classList.remove('hidden');
-            currentRoomTitle.innerText = `# ${roomName}`;
-            errorMsg.innerText = "";
-        } else {
-            errorMsg.innerText = response.message;
-        }
-    });
-});
-
-// Send Message
-chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const input = document.getElementById('message-input');
-    const message = input.value.trim();
-
-    if (message) {
-        socket.emit('send-message', { message });
-        input.value = '';
+    if (!myName || !currentRoom || !secretKey) {
+        alert('Saari details bharen!');
+        return;
     }
-});
 
-// Receive Message
-socket.on('receive-message', (data) => {
-    const isSelf = data.sender === currentUser;
+    socket.emit('joinRoom', { username: myName, room: currentRoom, passkey: secretKey });
     
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message', isSelf ? 'self' : 'other');
-
-    msgDiv.innerHTML = `
-        <strong>${isSelf ? 'Aap' : data.sender}</strong><br>
-        <span>${escapeHtml(data.message)}</span>
-        <div class="message-meta">${data.time}</div>
-    `;
-
-    messagesContainer.appendChild(msgDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    joinScreen.classList.add('hidden');
+    chatScreen.classList.remove('hidden');
+    document.getElementById('room-title').innerText = `# ${currentRoom}`;
 });
 
-// System Notifications
-socket.on('system-message', (data) => {
-    const sysDiv = document.createElement('div');
-    sysDiv.classList.add('system-msg');
-    sysDiv.innerText = data.text;
-    messagesContainer.appendChild(sysDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-});
+sendBtn.addEventListener('click', sendMessage);
 
-// Leave Chat
-leaveBtn.addEventListener('click', () => {
-    window.location.reload();
-});
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.innerText = text;
-    return div.innerHTML;
+function sendMessage() {
+    const msgInput = document.getElementById('msg-input');
+    const text = msgInput.value.trim();
+    if (text) {
+        socket.emit('chatMessage', { room: currentRoom, text: text, sender: myName });
+        msgInput.value = '';
+    }
 }
+
+socket.on('message', (data) => {
+    const chatBox = document.getElementById('chat-box');
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message');
+    if (data.sender === myName) {
+        msgDiv.classList.add('my-msg');
+    }
+    msgDiv.innerHTML = `<strong>${data.sender}:</strong> ${data.text}`;
+    chatBox.appendChild(msgDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+});
+
+leaveBtn.addEventListener('click', () => {
+    location.reload();
+});
