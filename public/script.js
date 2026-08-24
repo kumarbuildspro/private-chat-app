@@ -1,76 +1,83 @@
 const socket = io();
 
-const joinScreen = document.getElementById('join-screen');
+const authScreen = document.getElementById('auth-screen');
 const chatScreen = document.getElementById('chat-screen');
-const joinBtn = document.getElementById('join-btn');
-const sendBtn = document.getElementById('send-btn');
+const loginForm = document.getElementById('login-form');
+const chatForm = document.getElementById('chat-form');
+const errorMsg = document.getElementById('error-msg');
+const messagesContainer = document.getElementById('messages-container');
+const currentRoomTitle = document.getElementById('current-room-title');
 const leaveBtn = document.getElementById('leave-btn');
-const msgInput = document.getElementById('msg-input');
 
-let currentRoom = '';
-let myName = '';
+let currentUser = "";
 
-joinBtn.addEventListener('click', (e) => {
-    e.preventDefault(); // Page refresh hone se rokne ke liye
-    
-    myName = document.getElementById('username').value.trim();
-    currentRoom = document.getElementById('room').value.trim();
-    const passkey = document.getElementById('passkey').value.trim();
-
-    if (!myName || !currentRoom || !passkey) {
-        alert('Saari details sahi se bharen!');
-        return;
-    }
-
-    socket.emit('joinRoom', { username: myName, room: currentRoom, passkey: passkey });
-});
-
-socket.on('joinSuccess', (data) => {
-    joinScreen.classList.add('hidden');
-    chatScreen.classList.remove('hidden');
-    document.getElementById('room-title').innerText = `# ${data.room}`;
-});
-
-socket.on('errorMsg', (msg) => {
-    alert(msg);
-});
-
-sendBtn.addEventListener('click', (e) => {
+// Authentication & Join Room
+loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    sendMessage();
+    
+    const username = document.getElementById('username').value.trim();
+    const roomName = document.getElementById('room-name').value.trim();
+    const roomKey = document.getElementById('room-key').value.trim();
+
+    currentUser = username;
+
+    socket.emit('join-room', { roomName, username, roomKey }, (response) => {
+        if (response.success) {
+            authScreen.classList.add('hidden');
+            chatScreen.classList.remove('hidden');
+            currentRoomTitle.innerText = `# ${roomName}`;
+            errorMsg.innerText = "";
+        } else {
+            errorMsg.innerText = response.message;
+        }
+    });
 });
 
-msgInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        sendMessage();
+// Send Message
+chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('message-input');
+    const message = input.value.trim();
+
+    if (message) {
+        socket.emit('send-message', { message });
+        input.value = '';
     }
 });
 
-function sendMessage() {
-    const text = msgInput.value.trim();
-    if (text) {
-        socket.emit('chatMessage', { room: currentRoom, text: text, sender: myName });
-        msgInput.value = '';
-    }
-}
-
-socket.on('message', (data) => {
-    const chatBox = document.getElementById('chat-box');
+// Receive Message
+socket.on('receive-message', (data) => {
+    const isSelf = data.sender === currentUser;
+    
     const msgDiv = document.createElement('div');
-    msgDiv.classList.add('message');
-    
-    if (data.sender === myName) {
-        msgDiv.classList.add('my-msg');
-    } else if (data.sender === 'System') {
-        msgDiv.classList.add('sys-msg');
-    }
-    
-    msgDiv.innerHTML = `<strong>${data.sender}:</strong> ${data.text}`;
-    chatBox.appendChild(msgDiv);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    msgDiv.classList.add('message', isSelf ? 'self' : 'other');
+
+    msgDiv.innerHTML = `
+        <strong>${isSelf ? 'Aap' : data.sender}</strong><br>
+        <span>${escapeHtml(data.message)}</span>
+        <div class="message-meta">${data.time}</div>
+    `;
+
+    messagesContainer.appendChild(msgDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 });
 
-leaveBtn.addEventListener('click', () => {
-    location.reload();
+// System Notifications
+socket.on('system-message', (data) => {
+    const sysDiv = document.createElement('div');
+    sysDiv.classList.add('system-msg');
+    sysDiv.innerText = data.text;
+    messagesContainer.appendChild(sysDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 });
+
+// Leave Chat
+leaveBtn.addEventListener('click', () => {
+    window.location.reload();
+});
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerText = text;
+    return div.innerHTML;
+}
