@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Chat Application</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Auth / Login Screen -->
+    <div id="auth-screen" class="glass-card">
+        <h2>Private Chat Join</h2>
+        <p class="subtitle">Bina Auth Key ke koi room mein nahi aa sakta.</p>
+        
+        <form id="login-form">
+            <div class="input-group">
+                <label>Aapka Naam</label>
+                <input type="text" id="username" placeholder="Jaise: Kumar" required />
+            </div>
+
+            <div class="input-group">
+                <label>Room Code / Name</label>
+                <input type="text" id="room-name" placeholder="Jaise: secure-room-1" required />
+            </div>
+
+            <div class="input-group">
+                <label>Secret Passkey (Dono log same daalein)</label>
+                <input type="password" id="room-key" placeholder="••••••••" required />
+            </div>
+
+            <button type="submit" id="join-btn">Private Chat Start Karein</button>
+            <p id="error-msg" class="error"></p>
+        </form>
+    </div>
+
+    <!-- Chat Interface -->
+    <div id="chat-screen" class="glass-card hidden">
+        <header class="chat-header">
+            <div>
+                <h3 id="current-room-title">Room Name</h3>
+                <span class="status-indicator">● Encrypted Private Session</span>
+            </div>
+            <button id="leave-btn">Leave</button>
+        </header>
+
+        <div id="messages-container" class="messages-container"></div>
+
+        <form id="chat-form" class="chat-input-area">
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" required />
+            <button type="submit" id="send-btn">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
