@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="hi" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,8 +11,11 @@
 
     <!-- Auth / Login Screen -->
     <div id="auth-screen" class="glass-card">
-        <h2>Private Chat Join</h2>
-        <p class="subtitle">Bina Auth Key ke koi room mein nahi aa sakta.</p>
+        <div class="auth-header">
+            <h2>Private Chat Join</h2>
+            <button type="button" class="theme-toggle-btn" id="theme-toggle-login" title="Switch Theme">🌙</button>
+        </div>
+        <p class="subtitle">Bina sahi Room Code aur Passkey ke koi room mein nahi aa sakta.</p>
         
         <form id="login-form">
             <div class="input-group">
@@ -43,13 +46,30 @@
                 <span class="status-indicator">● Encrypted Private Session</span>
                 <div id="active-users-list" class="active-users">Members: -</div>
             </div>
-            <button id="leave-btn">Leave</button>
+            <div class="header-actions">
+                <button type="button" class="theme-toggle-btn" id="theme-toggle-chat" title="Switch Theme">🌙</button>
+                <button type="button" id="clear-chat-btn" title="Clear Chat Screen">Clear Chat</button>
+                <button type="button" id="leave-btn">Leave</button>
+            </div>
         </header>
 
         <div id="messages-container" class="messages-container"></div>
+        <div id="typing-indicator" class="typing-indicator hidden"></div>
 
         <form id="chat-form" class="chat-input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" required />
+            <div class="emoji-wrapper">
+                <button type="button" id="emoji-btn" class="icon-btn" title="Add Emoji">😊</button>
+                <div id="emoji-picker" class="emoji-picker hidden">
+                    <span>😀</span><span>😂</span><span>😍</span><span>🔥</span><span>👍</span>
+                    <span>🎉</span><span>❤️</span><span>😎</span><span>🙌</span><span>💯</span>
+                    <span>🙏</span><span>✨</span><span>🚀</span><span>👏</span><span>💡</span>
+                </div>
+            </div>
+
+            <label for="image-input" class="icon-btn image-label" title="Upload Image">📷</label>
+            <input type="file" id="image-input" accept="image/*" class="hidden" />
+
+            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
             <button type="submit" id="send-btn">Send</button>
         </form>
     </div>
