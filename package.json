@@ -1,7 +1,7 @@
 {
   "name": "private-chat-app",
-  "version": "1.0.0",
-  "description": "Private Realtime End-to-End Style Chatting Application",
+  "version": "1.1.0",
+  "description": "Private Realtime Chatting Application with Rich Media & Security Controls",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
