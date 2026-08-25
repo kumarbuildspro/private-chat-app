@@ -8,6 +8,7 @@ const errorMsg = document.getElementById('error-msg');
 const messagesContainer = document.getElementById('messages-container');
 const currentRoomTitle = document.getElementById('current-room-title');
 const leaveBtn = document.getElementById('leave-btn');
+const activeUsersList = document.getElementById('active-users-list');
 
 let currentUser = "";
 
@@ -51,15 +52,39 @@ socket.on('receive-message', (data) => {
     
     const msgDiv = document.createElement('div');
     msgDiv.classList.add('message', isSelf ? 'self' : 'other');
+    msgDiv.setAttribute('id', `msg-${data.id}`);
+
+    const deleteOption = isSelf ? `<button class="delete-btn" onclick="deleteMessage('${data.id}')">Delete</button>` : '';
 
     msgDiv.innerHTML = `
-        <strong>${isSelf ? 'Aap' : data.sender}</strong><br>
-        <span>${escapeHtml(data.message)}</span>
-        <div class="message-meta">${data.time}</div>
+        <strong>${isSelf ? 'Aap' : escapeHtml(data.sender)}</strong><br>
+        <span class="msg-text">${escapeHtml(data.message)}</span>
+        <div class="message-meta">
+            <span>${data.time}</span>
+            ${deleteOption}
+        </div>
     `;
 
     messagesContainer.appendChild(msgDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+
+// Delete Message Trigger
+function deleteMessage(messageId) {
+    socket.emit('delete-message', { messageId });
+}
+
+// Handle Message Deleted event from server
+socket.on('message-deleted', (data) => {
+    const targetMsg = document.getElementById(`msg-${data.messageId}`);
+    if (targetMsg) {
+        targetMsg.remove();
+    }
+});
+
+// Update Room Members List
+socket.on('update-users', (users) => {
+    activeUsersList.innerText = `Online (${users.length}): ${users.join(', ')}`;
 });
 
 // System Notifications
