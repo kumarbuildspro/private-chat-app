@@ -8,7 +8,8 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "*"
-  }
+  },
+  maxHttpBufferSize: 1e7 // Allow file transfers up to 10MB
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -21,16 +22,22 @@ io.on('connection', (socket) => {
   // Handle Joining Room securely
   socket.on('join-room', ({ roomName, username, roomKey }, callback) => {
     if (!roomName || !username || !roomKey) {
-      return callback({ success: false, message: 'Sabhi fields required hain!' });
+      return callback({ 
+        success: false, 
+        message: 'Kripya Room Code, Username aur Secret Passkey sabhi bharein!' 
+      });
     }
 
     const formattedRoom = roomName.trim().toLowerCase();
     const cleanUsername = username.trim();
 
-    // Check Key Verification
+    // Check Key & Name Verification
     if (activeRooms[formattedRoom]) {
       if (activeRooms[formattedRoom].key !== roomKey) {
-        return callback({ success: false, message: 'Galat Room Secret Key!' });
+        return callback({ 
+          success: false, 
+          message: '⚠️ Warning: Aapka Room Code ya Secret Passkey galat hai! Kripya sahi Secret Passkey enter karein tabhi access milega.' 
+        });
       }
     } else {
       // Room Initialization
@@ -60,20 +67,33 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Handle Realtime Messages (Broadcast to both users)
+  // Handle Realtime Messages & Media
   socket.on('send-message', (data) => {
     const room = socket.roomName;
-    if (!room || !activeRooms[room] || !data.message) return;
+    if (!room || !activeRooms[room]) return;
+
+    if (!data.message && !data.image) return;
 
     const payload = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 4), // Unique Message ID
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
       sender: socket.username,
-      message: data.message,
+      message: data.message || '',
+      image: data.image || null,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
-    // Broadcast message to EVERYONE in room (including sender & receiver)
     io.to(room).emit('receive-message', payload);
+  });
+
+  // Handle Typing Events
+  socket.on('typing', (isTyping) => {
+    const room = socket.roomName;
+    if (room) {
+      socket.to(room).emit('display-typing', {
+        username: socket.username,
+        isTyping: isTyping
+      });
+    }
   });
 
   // Handle Delete Message
@@ -88,7 +108,6 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     const room = socket.roomName;
     if (room && activeRooms[room]) {
-      // Remove disconnected user
       activeRooms[room].users = activeRooms[room].users.filter(u => u.id !== socket.id);
       
       const remainingUsers = activeRooms[room].users.map(u => u.username);
@@ -98,7 +117,6 @@ io.on('connection', (socket) => {
         text: `${socket.username || 'Ek member'} ne room chhod diya hai.`
       });
 
-      // Cleanup room if empty
       if (activeRooms[room].users.length === 0) {
         delete activeRooms[room];
       }
